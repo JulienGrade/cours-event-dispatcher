@@ -58,9 +58,33 @@ use App\Database;
 use App\Logger;
 use App\Mailer\Mailer;
 use App\Texter\SmsTexter;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use App\Listener\OrderEmailsListener;
+use App\Listener\OrderSmsListener;
 
 require __DIR__ . '/vendor/autoload.php';
+/*
+// Callable :
+// - Fonctions anonymes
+$fonction = function() {
+    var_dump("JE SUIS UNE FONCTION ANONYME");
+};
 
+$fonction();
+
+// - Fonctions définies:
+function fonctionNommee() {
+    var_dump("JE SUIS UNE FONCTION DEFINIE");
+}
+
+fonctionNommee();
+
+// - les méthodes d'objets:
+$logger = new Logger();
+$fonction = [$logger, 'log'];
+
+$fonction('APPEL DE LA METHODE LOG DU LOGGER');
+*/
 /**
  * INSTANCIATION DES OBJETS DE BASE :
  * -----------
@@ -71,8 +95,28 @@ $mailer = new Mailer(); // Un service fictif d'envoi d'emails (là aussi, que du
 $smsTexter = new SmsTexter(); // Un service fictif d'envoi de SMS (là aussi que du var_dump)
 $logger = new Logger(); // Un service de log (qui ne fait que du var_dump aussi)
 
+$dispatcher = new EventDispatcher();
+
+$orderEmailsListener = new OrderEmailsListener($mailer, $logger);
+$orderSmsListener = new OrderSmsListener($smsTexter, $logger);
+
+$dispatcher->addListener('order.before_insert', [$orderEmailsListener, 'sendToStock']);
+$dispatcher->addListener('order.after_insert', [$orderEmailsListener, 'sendToCustomer']);
+$dispatcher->addListener('order.after_insert', [$orderSmsListener, 'sendSmsToCustomer']);
+/*
+$dispatcher->addListener('order.before_insert', function(){
+    var_dump("J'AI BIEN VU L'EVENEMENT EN QUESTION !");
+});
+
+function fonctionDefinie() {
+    var_dump("JE SUIS UNE FONCTION DEFINIE");
+}
+
+$dispatcher->addListener('order.before_insert', 'fonctionDefinie');
+*/
+
 // Notre controller qui a besoin de tout ces services
-$controller = new OrderController($database, $mailer, $smsTexter, $logger);
+$controller = new OrderController($database, $mailer, $smsTexter, $logger,$dispatcher);
 
 // Si le formulaire a été soumis
 if (!empty($_POST)) {
