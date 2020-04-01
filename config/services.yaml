@@ -7,19 +7,25 @@ services:
   App\Controller\OrderController:
     public: true
 
+  App\Listener\OrderSmsListener:
+    tags: ["app.event_listener"]
+
+  App\Listener\OrderEmailsSubscriber:
+    tags: ["app.event_subscriber"]
+
   Symfony\Component\EventDispatcher\EventDispatcher:
     public: true
-    calls:
-      - method: "addListener"
-        arguments:
-          - order.after_insert
-          - ['@App\Listener\OrderSmsListener', "sendSmsToStock"]
-          - 3
-      - method: "addListener"
-        arguments:
-          - order.after_insert
-          - ['@App\Listener\OrderSmsListener', "sendSmsToCustomer"]
-          - 2
-      - method: "addSubscriber"
-        arguments:
-          - '@App\Listener\OrderEmailsSubscriber'
+    #calls:
+    #  - method: "addListener"
+    #    arguments:
+    #      - order.after_insert
+    #      - ['@App\Listener\OrderSmsListener', "sendSmsToStock"]
+    #      - 3
+    #  - method: "addListener"
+    #    arguments:
+    #      - order.after_insert
+    #      - ['@App\Listener\OrderSmsListener', "sendSmsToCustomer"]
+    #      - 2
+    #  - method: "addSubscriber"
+    #    arguments:
+    #      - '@App\Listener\OrderEmailsSubscriber'
