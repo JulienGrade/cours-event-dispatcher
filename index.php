@@ -59,7 +59,7 @@ use App\Logger;
 use App\Mailer\Mailer;
 use App\Texter\SmsTexter;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use App\Listener\OrderEmailsListener;
+use App\Listener\OrderEmailsSubscriber;
 use App\Listener\OrderSmsListener;
 
 require __DIR__ . '/vendor/autoload.php';
@@ -97,12 +97,15 @@ $logger = new Logger(); // Un service de log (qui ne fait que du var_dump aussi)
 
 $dispatcher = new EventDispatcher();
 
-$orderEmailsListener = new OrderEmailsListener($mailer, $logger);
+$orderEmailsSubscriber = new OrderEmailsSubscriber($mailer, $logger);
 $orderSmsListener = new OrderSmsListener($smsTexter, $logger);
 
-$dispatcher->addListener('order.before_insert', [$orderEmailsListener, 'sendToStock']);
-$dispatcher->addListener('order.after_insert', [$orderEmailsListener, 'sendToCustomer']);
-$dispatcher->addListener('order.after_insert', [$orderSmsListener, 'sendSmsToCustomer']);
+//$dispatcher->addListener('order.before_insert', [$orderEmailsSubscriber, 'sendToStock']);
+$dispatcher->addListener('order.after_insert', [$orderSmsListener, 'sendSmsToStock'], 3);
+//$dispatcher->addListener('order.after_insert', [$orderEmailsSubscriber, 'sendToCustomer'], 1);
+$dispatcher->addListener('order.after_insert', [$orderSmsListener, 'sendSmsToCustomer'], 2);
+$dispatcher->addSubscriber($orderEmailsSubscriber);
+
 /*
 $dispatcher->addListener('order.before_insert', function(){
     var_dump("J'AI BIEN VU L'EVENEMENT EN QUESTION !");

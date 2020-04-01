@@ -8,8 +8,9 @@ use App\Event\OrderEvent;
 use App\Logger;
 use App\Mailer\Email;
 use App\Mailer\Mailer;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class OrderEmailsListener
+class OrderEmailsSubscriber implements EventSubscriberInterface
 {
     protected $mailer;
     protected $logger;
@@ -44,6 +45,7 @@ class OrderEmailsListener
     public function sendToCustomer(OrderEvent $event)
     {
         $order = $event->getOrder();
+        $event->stopPropagation();
         // Après enregistrement, on veut envoyer un email au client :
         // voir src/Mailer/Email.php et src/Mailer/Mailer.php
         $email = new Email();
@@ -57,5 +59,17 @@ class OrderEmailsListener
         // Après email au client, on veut logger ce qui se passe :
         // voir src/Logger.php
         $this->logger->log("Email de confirmation envoyé à {$order->getEmail()} !");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public static function getSubscribedEvents()
+    {
+        // TODO: Implement getSubscribedEvents() method.
+        return [
+            'order.before_insert' => ['sendToStock'],
+            'order.after_insert' => [['sendToCustomer', 5]]
+        ];
     }
 }
